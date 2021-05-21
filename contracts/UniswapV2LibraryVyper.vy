@@ -97,17 +97,24 @@ def getAmountIn(amountOut: uint256, reserveIn: uint256, reserveOut: uint256) -> 
 	return amountIn
 
 
+
 # performs chained getAmountOut calculations on AT MOST SOME NUMBER pairs (if u need more just edit the code) vyper has no dynamic arrays
 @view
 @external
 def getAmountsOut(factory: address, amountIn: uint256, path: address[3]) -> (uint256[3]):
+	"""
+	@dev instead of passing a small fixed sized address array(path: address[3]), you could pass in a larger one 
+		with the unused indices being set to the zero address. uncomment the two lines in the 2 next functions
+		change the output and input array size to something large like Bytes[20]
+		and then you could slice the array down to proper size whereever you need it
+	"""  
 	amounts: uint256[3] = empty(uint256[3])
 	amounts[0] = amountIn
 	reserveIn: uint256 = empty(uint256)
 	reserveOut: uint256 = empty(uint256)
-	for i in range(0,2):
-		if path[i] == empty(address):
-			break
+	for i in range(0,2): # range from 0 index to last index of array
+		#if path[i] == ZERO_ADDRESS: 
+		#	break						 
 		(reserveIn,reserveOut) = self.getReserves(factory,path[i],path[i+1])
 		amounts[i+1] = self.getAmountOut(amounts[i],reserveIn,reserveOut)
 	return amounts
@@ -118,13 +125,12 @@ def getAmountsOut(factory: address, amountIn: uint256, path: address[3]) -> (uin
 @external
 def getAmountsIn(factory: address, amountOut: uint256, path: address[3]) -> (uint256[3]):
 	amounts: uint256[3] = empty(uint256[3])
-	amounts[2] = amountOut
+	amounts[2] = amountOut # length of array -1
 	reserveIn: uint256 = empty(uint256)
 	reserveOut: uint256 = empty(uint256)
-	for i in range(0,2):
-		if path[2-i] == empty(address):
-			break
-		(reserveIn,reserveOut) = self.getReserves(factory,path[1-i],path[2-i])
-		amounts[1-i] = self.getAmountIn(amounts[2-i],reserveIn,reserveOut)
+	for i in range(0,2): # range from 0 index to last index of array
+		#if path[2-i] == ZERO_ADDRESS: # same thing as above 
+		#	break
+		(reserveIn,reserveOut) = self.getReserves(factory,path[1-i],path[2-i]) # path[max size-1 minus i], path[max size minus i]
+		amounts[1-i] = self.getAmountIn(amounts[2-i],reserveIn,reserveOut) # path[max size minus i], path[max size-1 minus i]
 	return amounts
-
